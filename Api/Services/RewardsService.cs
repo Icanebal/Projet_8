@@ -1,4 +1,5 @@
-﻿using GpsUtil.Location;
+﻿using System.Collections.Concurrent;
+using GpsUtil.Location;
 using TourGuide.LibrairiesWrappers.Interfaces;
 using TourGuide.Services.Interfaces;
 using TourGuide.Users;
@@ -13,7 +14,6 @@ public class RewardsService : IRewardsService
     private readonly int _attractionProximityRange = 200;
     private readonly IGpsUtil _gpsUtil;
     private readonly IRewardCentral _rewardsCentral;
-    private static int count = 0;
 
     public RewardsService(IGpsUtil gpsUtil, IRewardCentral rewardCentral)
     {
@@ -36,20 +36,27 @@ public class RewardsService : IRewardsService
     {
         List<VisitedLocation> userLocations = user.VisitedLocations.ToList();
         List<Attraction> attractions = _gpsUtil.GetAttractions();
-        var existingRewards = user.UserRewards.ToList();ok
+        var existingRewardNames = new HashSet<string>(user.UserRewards.Select(r => r.Attraction.AttractionName));
+        ConcurrentBag<UserReward> rewardsToAdd = new ConcurrentBag<UserReward>();
 
-        foreach (var visitedLocation in userLocations)
-        {
-            foreach (var attraction in attractions)
+            Parallel.ForEach(userLocations, visitedLocation =>
             {
-                if (!existingRewards.Any(r => r.Attraction.AttractionName == attraction.AttractionName))
+                Parallel.ForEach(attractions, attraction =>
                 {
-                    if (NearAttraction(visitedLocation, attraction))
+                    if (!existingRewardNames.Contains(attraction.AttractionName))
                     {
-                        user.AddUserReward(new UserReward(visitedLocation, attraction, GetRewardPoints(attraction, user)));
+                        if (NearAttraction(visitedLocation, attraction))
+                        {
+                            var reward = new UserReward(visitedLocation, attraction, GetRewardPoints(attraction, user));
+                            rewardsToAdd.Add(reward);
+                        }
                     }
-                }
-            }
+                });
+            });
+
+        foreach (var reward in rewardsToAdd)
+        {
+            user.AddUserReward(reward);
         }
     }
 
