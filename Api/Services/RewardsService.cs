@@ -31,7 +31,6 @@ public class RewardsService : IRewardsService
     {
         _proximityBuffer = _defaultProximityBuffer;
     }
-
     public void CalculateRewards(User user)
     {
         List<VisitedLocation> userLocations = user.VisitedLocations.ToList();
