@@ -33,27 +33,27 @@ public class RewardsService : IRewardsService
     }
     public void CalculateRewards(User user)
     {
-        List<VisitedLocation> userLocations = user.VisitedLocations.ToList();
-        List<Attraction> attractions = _gpsUtil.GetAttractions();
+        var userLocations = user.VisitedLocations.ToList();
+        var attractions = _gpsUtil.GetAttractions();
         var existingRewardNames = new HashSet<string>(user.UserRewards.Select(r => r.Attraction.AttractionName));
-        ConcurrentBag<UserReward> rewardsToAdd = new ConcurrentBag<UserReward>();
 
-            Parallel.ForEach(userLocations, visitedLocation =>
-            {
-                Parallel.ForEach(attractions, attraction =>
-                {
-                    if (!existingRewardNames.Contains(attraction.AttractionName))
-                    {
-                        if (NearAttraction(visitedLocation, attraction))
-                        {
-                            var reward = new UserReward(visitedLocation, attraction, GetRewardPoints(attraction, user));
-                            rewardsToAdd.Add(reward);
-                        }
-                    }
-                });
-            });
+        var validCombinations = userLocations
+        .AsParallel()
+        .SelectMany(location => attractions
+        .Where(attraction => !existingRewardNames
+        .Contains(attraction.AttractionName) && NearAttraction(location, attraction))
+        .Select(attraction => (location, attraction)))
+        .ToList();
 
-        foreach (var reward in rewardsToAdd)
+        var rewards = new ConcurrentBag<UserReward>();
+        Parallel.ForEach(validCombinations, combo =>
+        {
+            var points = GetRewardPoints(combo.attraction, user);
+            var reward = new UserReward(combo.location, combo.attraction, points);
+            rewards.Add(reward);
+        });
+
+        foreach (var reward in rewards)
         {
             user.AddUserReward(reward);
         }

@@ -1,6 +1,5 @@
 ﻿using GpsUtil.Location;
 using TourGuide.LibrairiesWrappers.Interfaces;
-using TourGuide.Users;
 
 namespace TourGuide.LibrairiesWrappers;
 
