@@ -38,20 +38,18 @@ namespace TourGuideTest
         }
 
         [Fact]
-        public void HighVolumeTrackLocation()
+        public async Task HighVolumeTrackLocation()
         {
-            //On peut ici augmenter le nombre d'utilisateurs pour tester les performances
             _fixture.Initialize(1000);
-
             List<User> allUsers = _fixture.TourGuideService.GetAllUsers();
-
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            Parallel.ForEach(allUsers, user =>
+            await Parallel.ForEachAsync(allUsers, async (user, cancellationToken) =>
             {
-                _fixture.TourGuideService.TrackUserLocation(user);
+                await _fixture.TourGuideService.TrackUserLocationAsync(user);
             });
+
             stopWatch.Stop();
             _fixture.TourGuideService.Tracker.StopTracking();
 
@@ -61,20 +59,18 @@ namespace TourGuideTest
         }
 
         [Fact]
-        public void HighVolumeGetRewards()
+        public async Task HighVolumeGetRewards()
         {
-            //On peut ici augmenter le nombre d'utilisateurs pour tester les performances
             _fixture.Initialize(100);
-
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
-
             List<Attraction> attractions = _fixture.GpsUtil.GetAttractions();
             Attraction attraction = attractions[0];
             List<User> allUsers = _fixture.TourGuideService.GetAllUsers();
             allUsers.ForEach(u => u.AddToVisitedLocations(new VisitedLocation(u.UserId, attraction, DateTime.Now)));
 
-            Parallel.ForEach(allUsers, user => _fixture.RewardsService.CalculateRewards(user));
+            await Parallel.ForEachAsync(allUsers, async (user, ct) =>
+                await _fixture.RewardsService.CalculateRewardsAsync(user));
 
             foreach (var user in allUsers)
             {

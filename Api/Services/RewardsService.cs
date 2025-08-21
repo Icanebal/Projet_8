@@ -31,32 +31,38 @@ public class RewardsService : IRewardsService
     {
         _proximityBuffer = _defaultProximityBuffer;
     }
-    public void CalculateRewards(User user)
+    public async Task CalculateRewardsAsync(User user)
     {
         var userLocations = user.VisitedLocations.ToList();
         var attractions = _gpsUtil.GetAttractions();
         var existingRewardNames = new HashSet<string>(user.UserRewards.Select(r => r.Attraction.AttractionName));
 
         var validCombinations = userLocations
-        .AsParallel()
-        .SelectMany(location => attractions
-        .Where(attraction => !existingRewardNames
-        .Contains(attraction.AttractionName) && NearAttraction(location, attraction))
-        .Select(attraction => (location, attraction)))
-        .ToList();
+            .AsParallel()
+            .SelectMany(location => attractions
+                .Where(attraction => !existingRewardNames
+                    .Contains(attraction.AttractionName) && NearAttraction(location, attraction))
+                .Select(attraction => (location, attraction)))
+            .ToList();
 
-        var rewards = new ConcurrentBag<UserReward>();
-        Parallel.ForEach(validCombinations, combo =>
+        // SOLUTION : Parallélisme asynchrone au lieu de Parallel.ForEach
+        var rewardTasks = validCombinations.Select(async combo =>
         {
-            var points = GetRewardPoints(combo.attraction, user);
-            var reward = new UserReward(combo.location, combo.attraction, points);
-            rewards.Add(reward);
+            var points = await GetRewardPointsAsync(combo.attraction, user);
+            return new UserReward(combo.location, combo.attraction, points);
         });
+
+        var rewards = await Task.WhenAll(rewardTasks);
 
         foreach (var reward in rewards)
         {
             user.AddUserReward(reward);
         }
+    }
+
+    private async Task<int> GetRewardPointsAsync(Attraction attraction, User user)
+    {
+        return await Task.Run(() => _rewardsCentral.GetAttractionRewardPoints(attraction.AttractionId, user.UserId));
     }
 
     public bool IsWithinAttractionProximity(Attraction attraction, Locations location)

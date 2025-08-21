@@ -24,17 +24,21 @@ public class TourGuideController : ControllerBase
     }
 
     [HttpGet("Location")]
-    public ActionResult<VisitedLocation> GetLocation([FromQuery] string userName)
+    public async Task<ActionResult<VisitedLocation>> GetLocation([FromQuery] string userName)
     {
-        var location = _tourGuideService.GetUserLocation(GetUser(userName));
+        var location = await _tourGuideService.GetUserLocationAsync(GetUser(userName));
         return Ok(location);
     }
 
     [HttpGet("NearbyAttractions")]
-    public ActionResult<List<Attraction>> GetNearbyAttractions([FromQuery] string userName)
+    public async Task<ActionResult<List<Attraction>>> GetNearbyAttractions([FromQuery] string userName)
     {
         var user = GetUser(userName);
-        var visitedLocation = _tourGuideService.GetUserLocation(user);
+        var visitedLocation = await _tourGuideService.GetUserLocationAsync(user);
+        if (visitedLocation == null)
+        {
+            return BadRequest("Unable to get user location");
+        }
         var attractions = _tourGuideService.GetNearByAttractions(visitedLocation);
 
         var response = attractions.Select(attraction => new NearbyAttractionResponse
@@ -67,6 +71,7 @@ public class TourGuideController : ControllerBase
 
     private User GetUser(string userName)
     {
+
         return _tourGuideService.GetUser(userName);
     }
 }
