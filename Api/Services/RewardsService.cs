@@ -36,7 +36,6 @@ public class RewardsService : IRewardsService
         var userLocations = user.VisitedLocations.ToList();
         var attractions = _gpsUtil.GetAttractions();
         var existingRewardNames = new HashSet<string>(user.UserRewards.Select(r => r.Attraction.AttractionName));
-
         var validCombinations = userLocations
         .AsParallel()
         .SelectMany(location => attractions
@@ -44,7 +43,6 @@ public class RewardsService : IRewardsService
         .Contains(attraction.AttractionName) && NearAttraction(location, attraction))
         .Select(attraction => (location, attraction)))
         .ToList();
-
         var rewards = new ConcurrentBag<UserReward>();
         Parallel.ForEach(validCombinations, combo =>
         {
@@ -52,13 +50,11 @@ public class RewardsService : IRewardsService
             var reward = new UserReward(combo.location, combo.attraction, points);
             rewards.Add(reward);
         });
-
         foreach (var reward in rewards)
         {
             user.AddUserReward(reward);
         }
     }
-
     public bool IsWithinAttractionProximity(Attraction attraction, Locations location)
     {
         Console.WriteLine(GetDistance(attraction, location));

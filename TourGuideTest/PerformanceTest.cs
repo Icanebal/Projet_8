@@ -2,7 +2,6 @@
 using GpsUtil.Location;
 using TourGuide.Users;
 using Xunit.Abstractions;
-using TourGuide.LibrairiesWrappers.Interfaces;
 
 namespace TourGuideTest
 {
