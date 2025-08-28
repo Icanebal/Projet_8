@@ -1,4 +1,5 @@
-﻿using TourGuide.LibrairiesWrappers.Interfaces;
+﻿using System.Collections.Concurrent;
+using TourGuide.LibrairiesWrappers.Interfaces;
 
 namespace TourGuide.LibrairiesWrappers
 {

@@ -49,12 +49,12 @@ public class TourGuideService : ITourGuideService
         return user.UserRewards;
     }
 
-    public VisitedLocation GetUserLocation(User user)
+    public VisitedLocation? GetUserLocation(User user)
     {
         return user.VisitedLocations.Any() ? user.GetLastVisitedLocation() : TrackUserLocation(user);
     }
 
-    public User GetUser(string userName)
+    public User? GetUser(string userName)
     {
         return _internalUserMap.ContainsKey(userName) ? _internalUserMap[userName] : null;
     }
@@ -92,16 +92,10 @@ public class TourGuideService : ITourGuideService
 
     public List<Attraction> GetNearByAttractions(VisitedLocation visitedLocation)
     {
-        List<Attraction> nearbyAttractions = new ();
-        foreach (var attraction in _gpsUtil.GetAttractions())
-        {
-            if (_rewardsService.IsWithinAttractionProximity(attraction, visitedLocation.Location))
-            {
-                nearbyAttractions.Add(attraction);
-            }
-        }
-
-        return nearbyAttractions;
+        return _gpsUtil.GetAttractions()
+            .OrderBy(a => _rewardsService.GetDistance(a, visitedLocation.Location))
+            .Take(5)
+            .ToList();
     }
 
     private void AddShutDownHook()
