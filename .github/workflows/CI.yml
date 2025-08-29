@@ -27,6 +27,9 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal --configuration Release
     - name: Publish artifacts
-      run: dotnet publish Api/TourGuide.csproj --no-build --configuration Release
-    - name: Upload artifacts 
+      run: dotnet publish Api/TourGuide.csproj --no-build --configuration Release --output ./artefactsProjet8
+    - name: Upload artifacts
       uses: actions/upload-artifact@v4
+      with:
+        name: tourguide-app
+        path: ./artefactsProjet8
