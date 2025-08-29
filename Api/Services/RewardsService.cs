@@ -38,9 +38,7 @@ public class RewardsService : IRewardsService
         var existingRewardNames = new HashSet<string>(user.UserRewards.Select(r => r.Attraction.AttractionName));
         var validCombinations = userLocations
         .AsParallel()
-        .SelectMany(location => attractions
-        .Where(attraction => !existingRewardNames
-        .Contains(attraction.AttractionName) && NearAttraction(location, attraction))
+        .SelectMany(location => attractions.Where(attraction => IsEligibleForReward(attraction, location, existingRewardNames))
         .Select(attraction => (location, attraction)))
         .ToList();
         var rewards = new ConcurrentBag<UserReward>();
@@ -54,6 +52,11 @@ public class RewardsService : IRewardsService
         {
             user.AddUserReward(reward);
         }
+    }
+    private bool IsEligibleForReward(Attraction attraction, VisitedLocation location, HashSet<string> existingRewardNames)
+    {
+        return !existingRewardNames.Contains(attraction.AttractionName) &&
+               NearAttraction(location, attraction);
     }
     public bool IsWithinAttractionProximity(Attraction attraction, Locations location)
     {

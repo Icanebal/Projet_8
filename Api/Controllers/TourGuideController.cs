@@ -33,20 +33,7 @@ public class TourGuideController : ControllerBase
     [HttpGet("NearbyAttractions")]
     public ActionResult<List<NearbyAttractionResponse>> GetNearbyAttractions([FromQuery] string userName)
     {
-        var user = GetUser(userName);
-        var visitedLocation = _tourGuideService.GetUserLocation(user);
-        var attractions = _tourGuideService.GetNearByAttractions(visitedLocation);
-
-        var response = attractions.Select(attraction => new NearbyAttractionResponse
-        {
-            AttractionName = attraction.AttractionName,
-            AttractionLatitude = attraction.Latitude,
-            AttractionLongitude = attraction.Longitude,
-            UserLatitude = visitedLocation.Location.Latitude,
-            UserLongitude = visitedLocation.Location.Longitude,
-            DistanceInMiles = _rewardsService.GetDistance(visitedLocation.Location, attraction),
-            RewardPoints = _rewardCentral.GetAttractionRewardPoints(attraction.AttractionId, visitedLocation.UserId)
-        }).ToList();
+        var response = _tourGuideService.GetNearbyAttractionsWithDetails(userName);
 
         return Ok(response);
     }

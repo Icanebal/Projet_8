@@ -1,7 +1,6 @@
-﻿using GpsUtil.Location;
-using Microsoft.Extensions.Logging;
-using System.Diagnostics;
-using System.Globalization;
+﻿using System.Globalization;
+using GpsUtil.Location;
+using TourGuide.DTOs;
 using TourGuide.LibrairiesWrappers.Interfaces;
 using TourGuide.Services.Interfaces;
 using TourGuide.Users;
@@ -15,18 +14,20 @@ public class TourGuideService : ITourGuideService
     private readonly ILogger _logger;
     private readonly IGpsUtil _gpsUtil;
     private readonly IRewardsService _rewardsService;
+    private readonly IRewardCentral _rewardCentral;
     private readonly TripPricer.TripPricer _tripPricer;
     public Tracker Tracker { get; private set; }
     private readonly Dictionary<string, User> _internalUserMap = new();
     private const string TripPricerApiKey = "test-server-api-key";
     private bool _testMode = true;
 
-    public TourGuideService(ILogger<TourGuideService> logger, IGpsUtil gpsUtil, IRewardsService rewardsService, ILoggerFactory loggerFactory)
+    public TourGuideService(ILogger<TourGuideService> logger, IGpsUtil gpsUtil, IRewardsService rewardsService, ILoggerFactory loggerFactory, IRewardCentral rewardCentral)
     {
         _logger = logger;
         _tripPricer = new();
         _gpsUtil = gpsUtil;
         _rewardsService = rewardsService;
+        _rewardCentral = rewardCentral;
 
         CultureInfo.CurrentCulture = new CultureInfo("en-US");
 
@@ -42,6 +43,7 @@ public class TourGuideService : ITourGuideService
 
         Tracker = new Tracker(this, trackerLogger);
         AddShutDownHook();
+        _rewardCentral = rewardCentral;
     }
 
     public List<UserReward> GetUserRewards(User user)
@@ -96,6 +98,26 @@ public class TourGuideService : ITourGuideService
             .OrderBy(a => _rewardsService.GetDistance(a, visitedLocation.Location))
             .Take(5)
             .ToList();
+    }
+
+    public List<NearbyAttractionResponse> GetNearbyAttractionsWithDetails(string userName)
+    {
+        var user = GetUser(userName);
+        if (user == null)
+            throw new ArgumentException($"User '{userName}' not found", nameof(userName));
+        var visitedLocation = GetUserLocation(user);
+        var attractions = GetNearByAttractions(visitedLocation);
+
+        return attractions.Select(attraction => new NearbyAttractionResponse
+        {
+            AttractionName = attraction.AttractionName,
+            AttractionLatitude = attraction.Latitude,
+            AttractionLongitude = attraction.Longitude,
+            UserLatitude = visitedLocation.Location.Latitude,
+            UserLongitude = visitedLocation.Location.Longitude,
+            DistanceInMiles = _rewardsService.GetDistance(visitedLocation.Location, attraction),
+            RewardPoints = _rewardCentral.GetAttractionRewardPoints(attraction.AttractionId, visitedLocation.UserId)
+        }).ToList();
     }
 
     private void AddShutDownHook()
