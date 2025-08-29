@@ -1,7 +1,6 @@
 ﻿using GpsUtil.Location;
 using Microsoft.AspNetCore.Mvc;
 using TourGuide.DTOs;
-using TourGuide.LibrairiesWrappers.Interfaces;
 using TourGuide.Services.Interfaces;
 using TourGuide.Users;
 using TripPricer;
@@ -13,14 +12,10 @@ namespace TourGuide.Controllers;
 public class TourGuideController : ControllerBase
 {
     private readonly ITourGuideService _tourGuideService;
-    private readonly IRewardsService _rewardsService;
-    private readonly IRewardCentral _rewardCentral;
 
-    public TourGuideController(ITourGuideService tourGuideService, IRewardsService rewardsService, IRewardCentral rewardCentral)
+    public TourGuideController(ITourGuideService tourGuideService)
     {
         _tourGuideService = tourGuideService;
-        _rewardsService = rewardsService;
-        _rewardCentral = rewardCentral;
     }
 
     [HttpGet("Location")]
