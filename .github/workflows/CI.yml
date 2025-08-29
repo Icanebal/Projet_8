@@ -25,7 +25,7 @@ jobs:
     - name: Build
       run: dotnet build TourGuide.sln --no-restore --configuration Release
     - name: Test
-      run: dotnet test --no-build --verbosity normal --configuration Release --filter "FullyQualifiedName!~PerformanceTest"
+      run: dotnet test --no-build --verbosity normal --configuration Release
     - name: Publish artifacts
       run: dotnet publish Api/TourGuide.csproj --no-build --configuration Release --output ./artefactsProjet8
     - name: Upload artifacts
