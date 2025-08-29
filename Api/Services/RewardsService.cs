@@ -37,7 +37,6 @@ public class RewardsService : IRewardsService
         var attractions = _gpsUtil.GetAttractions();
         var existingRewardNames = new HashSet<string>(user.UserRewards.Select(r => r.Attraction.AttractionName));
 
-        // Remplacement du PLINQ par Parallel.ForEach
         var validCombinations = new ConcurrentBag<(VisitedLocation location, Attraction attraction)>();
 
         Parallel.ForEach(userLocations, location =>
