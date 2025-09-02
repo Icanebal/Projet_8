@@ -35,7 +35,7 @@ public class Tracker
 
             stopwatch.Start();
 
-            Parallel.ForEach(users, u => _tourGuideService.TrackUserLocation(u));
+            users.ForEach(u => _tourGuideService.TrackUserLocation(u));
 
             stopwatch.Stop();
 
